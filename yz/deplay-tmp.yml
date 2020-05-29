@@ -1,0 +1,38 @@
+---
+- name: release war to ansible client
+  hosts: "{{ host }}"
+  vars:
+    app_path: "/home/service/{{ app_name }}"
+    src_app: "../repo/target/{{ app_name }}-1.0.0.jar"
+    dest_app: "{{ app_path }}/{{ app_name }}-1.0.0.jar"
+  tasks:
+  - name: 创建应用目录
+    file:
+      path: "{{ app_path }}"
+      state: directory
+      owner: root
+      group: root
+      mode: 0755
+  - name: 更新jar包
+    tags:
+      - upload
+    copy:
+      src: "{{ src_app }}"
+      dest: "{{ dest_app }}"
+      owner: root
+      group: root
+      mode: 0644
+  - name: 获取上次jar包运行的pid
+    tags:
+      - getpid
+    shell: "ps -ef |grep -v grep |grep {{ app_name }}|awk '{print $2}'"
+    register: running_processes
+# 强制杀死进程
+  - name: Force kill stuck processes
+    shell: "kill -9 {{ item }}"
+    with_items: "{{ running_processes.stdout_lines }}"
+# 启动应用
+  - name: start app
+    tags:
+      - start
+    shell: "source /etc/profile && nohup java -server -Xms1024M -Xmx1024M -jar {{ dest_app }} > /dev/null 2>&1 &"

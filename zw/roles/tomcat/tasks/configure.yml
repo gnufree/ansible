@@ -1,0 +1,78 @@
+---
+# tasks file for tomcat-ansible-role
+
+# 分发server.xml模板至服务器
+- name: Setup server.xml
+  template:
+    src: "tomcat-server-{{ '.'.join(tomcat_version.split('.')[:2]) }}.xml.j2"
+    dest: "{{ tomcat_complete_path }}/conf/server.xml"
+  notify: restart tomcat 
+
+- name: Set fact of user roles to be enabled
+  set_fact:
+    tomcat_user_roles: "{{ (tomcat_user_roles + item.roles.split(',')|list)|unique }}"
+  with_items:
+    - "{{ tomcat_users }}"
+
+# 根据add_tomcat_users判断是否需要增加用户
+- name: Setup tomcat-users.xml
+  template:
+    src: "tomcat-users-{{ '.'.join(tomcat_version.split('.')[:2]) }}.xml.j2"
+    dest: "{{ tomcat_install_path }}/apache-tomcat-{{ tomcat_version }}/conf/tomcat-users.xml"
+  when: add_tomcat_users == 'True'
+  notify: restart tomcat
+
+#- name: Create symlink {{ tomcat_install_path }}/apache-tomcat-{{ tomcat_version }} to {{ tomcat_install_path }}/{{ tomcat_service_name }}
+#  file:
+#    src: "{{ tomcat_install_path }}/apache-tomcat-{{ tomcat_version }}"
+#    dest: "{{ tomcat_install_path }}/{{ tomcat_service_name }}"
+#    state: link
+
+- name: Configure access to Manager app (from localhost only or from anywhere)
+  template:
+    src: manager-context.xml.j2
+    #dest: "{{ tomcat_install_path }}/apache-tomcat-{{ tomcat_version }}/webapps/manager/META-INF/context.xml"
+    dest: "{{ tomcat_complete }}/webapps/manager/META-INF/context.xml"
+  when: not clean_all_webapps
+  notify: restart tomcat
+
+- name: Configure access to Host Manager (from localhost only or from anywhere)
+  template:
+    src: host-manager-context.xml.j2
+    #dest: "{{ tomcat_install_path }}/apache-tomcat-{{ tomcat_version }}/webapps/host-manager/META-INF/context.xml"
+    dest: "{{ tomcat_complete }}/webapps/host-manager/META-INF/context.xml"
+  when: not clean_all_webapps
+  notify: restart tomcat
+
+
+- name: Configure tomcat file catalina.sh
+  template:
+    src: "catalina-{{ '.'.join(tomcat_version.split('.')[:2]) }}.sh.j2"
+    dest: "{{ tomcat_complete_path }}/bin/catalina.sh"
+  notify: restart tomcat
+
+
+# 判断是否清空webapps文件夹
+- name: clean webapps
+  file:
+    path: "{{ tomcat_complete_path }}/webapps/{{ item }}"
+    state: absent
+  when: clean_all_webapps
+  with_items:
+    - docs
+    - examples
+    - host-manager
+    - manager
+    - ROOT
+
+# 增加启停脚本 
+- name: add start and shutdown script
+  template:
+    src: "{{ item }}.sh.j2"
+    dest: "{{ tomcat_complete_path }}/{{ item }}.sh"
+    owner: root
+    group: root
+    mode: '0755'
+  with_items:
+    - tomcat_startup
+    - tomcat_shutdown

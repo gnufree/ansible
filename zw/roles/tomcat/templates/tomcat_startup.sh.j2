@@ -1,0 +1,4 @@
+#!/bin/bash
+usermod -s /bin/bash {{ tomcat_user }}
+su - {{ tomcat_user }} -c {{ tomcat_complete_path }}/bin/startup.sh
+usermod -s /sbin/nologin {{ tomcat_user }}

@@ -1,0 +1,39 @@
+#{{ ansible_managed }}
+
+{% for k,v in item.server.iteritems() if k.find('upstream') != -1 %}
+upstream {{ v.name }} {
+  
+  #LB_method;
+{% for x,y in v.iteritems() if x != 'name' %}
+  {% if y.find('$$') == -1 %}
+  server {{ y }};
+  {% endif %}
+{% endfor %}
+  }
+{% endfor %}
+
+server {
+
+{% for k,v in item.server.iteritems() %}
+{% if k.find('location') == -1 and k != 'file_name' and k.find('upstream') == -1 %}
+  {{ k }} {{ v }};
+{% endif %}
+{% endfor %}
+
+{% if nginx_separate_logs_per_site == True %}
+  access_log {{ nginx_log_dir}}/{{ item.server.server_name }}-{{ nginx_access_log_name }}.log;
+  error_log {{ nginx_log_dir}}/{{ item.server.server_name }}-{{ nginx_error_log_name }}.log;
+{% endif %}
+
+{% for k,v in item.server.iteritems() if k.find('location') != -1 %}
+  location {{ v.name }} {
+{% for x,y in v.iteritems() if x.find('proxy_set_header') != -1 %}
+    proxy_set_header {{ y }};
+{% endfor %}
+
+{% for x,y in v.iteritems() if x.find('proxy_set_header') == -1 and x != 'name' %}
+    {{ x }} {{ y }};
+{% endfor %}
+  }
+{% endfor %}
+}

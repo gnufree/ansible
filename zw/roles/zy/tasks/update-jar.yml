@@ -1,0 +1,47 @@
+---
+
+# 检查是否有jar文件
+- name: (deplay) Check if jar of {{ script_pash }} is exist
+  stat:
+    path: "{{ script_pash }}/{{ jar_name }}-1.0.0.jar"
+  register: jar_exist
+
+- name: (deplay) Check if {{ jar_name }} service is running
+  shell: "ps -ef|grep {{ jar_name }}|grep -v grep|wc -l"
+  register: service_running
+
+#- name: (deplay) Stop {{ jar_name }} service if running
+#  shell: "sh {{ script_pash }}/stop.sh"
+#  when: service_running.stdout|int >= 1
+#  register: service_is_stop
+# 停止应用换成老模式，避免shell脚本不运行的情况  
+- name: 获取jar包运行的pid
+  shell: "ps -ef |grep -v grep |grep {{ jar_name }}|awk '{print $2}'"
+  when: service_running.stdout|int >= 1
+  register: running_processes
+
+# 强制杀死进程
+- name: Force kill stuck processes
+  shell: "kill -9 {{ item }}"
+  with_items: "{{ running_processes.stdout_lines }}"
+  when: service_running.stdout|int >= 1
+  register: service_is_stop
+
+- name: (deplay) Create backup archive before redeplay at {{ back_directory }}/jar-backup-XXX.gz
+  archive:
+    path: 
+      - "{{ script_pash }}/"
+    dest: "{{ back_directory }}/{{ jar_name }}/{{ jar_name }}-1.0.0-backup-{{ lookup('pipe','date +%Y%m%d%H%M%S') }}.gz"
+  when: jar_exist.stat.exists
+
+# 从主服务器拷贝新jar包到从服务器
+- name: copy new jar file  
+  copy: 
+    src: "../repo/target/{{ jar_name }}-1.0.0.jar"
+    dest: "{{ script_pash }}/{{ jar_name }}-1.0.0.jar"
+    force: yes
+    owner: "{% if use_not_root_user|bool %}{{ user }}{% else %}root{% endif %}"
+    group: "{% if use_not_root_user|bool %}{{ group }}{% else %}root{% endif %}"
+    mode: 0644
+  changed_when: True
+  notify: startup jar

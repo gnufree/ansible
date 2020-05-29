@@ -1,0 +1,40 @@
+---
+
+- name: install openresty by yum step 1
+  yum: name=yum-utils state=present disable_gpg_check=yes
+  when: nginx_install_mode == 'from_yum'
+
+- name: install openresty by yum step 2
+  shell: "yum-config-manager --add-repo http://openresty.org/package/rhel/openresty.repo"
+  when: nginx_install_mode == 'from_yum'
+
+- name: install openresty by yum step 3
+  yum: name=openresty state=present enablerepo="openresty"
+  when: nginx_install_mode == 'from_yum'
+
+- name: download openresty source pkg
+  shell: "cd {{ nginx_install_path_by_source }}; wget -qN {{ download_openresty_url }}{{ nginx_version }}.tar.gz"
+  when: nginx_install_mode == 'from_source_package'
+  
+- name: tar source pkg
+  unarchive:
+    copy: no
+    src: "{{ nginx_install_path_by_source }}/openresty-{{ nginx_version }}.tar.gz"
+    dest: "{{ nginx_install_path_by_source }}"
+  when: nginx_install_mode == 'from_source_package'
+
+#- name: rename source directory
+#  shell: "mv {{ nginx_install_path_by_source }}/openresty-{{ nginx_version }} {{ nginx_install_path_by_source }}/openresty"
+#  when: nginx_install_mode == 'from_source_package'
+
+- name: build openresty source
+  shell: "./configure --prefix={{ nginx_install_path_by_source }}/{{ nginx_name }} {{ openresty_configure_arguments }}"
+  args:
+    chdir: "{{ nginx_install_path_by_source }}/openresty-{{ nginx_version }}"
+  when: nginx_install_mode == 'from_source_package'
+
+- name: make&&install openresty source
+  shell: "make&&make install"
+  args:
+    chdir: "{{ nginx_install_path_by_source }}/openresty-{{ nginx_version }}"
+  when: nginx_install_mode == 'from_source_package'

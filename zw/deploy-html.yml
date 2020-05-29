@@ -1,0 +1,25 @@
+---
+- name: 更新静态文件脚本
+  hosts: "{{ hosts }}"
+  vars:
+    app_path: "/data/service/website"
+    src_app: "../repo/dist/"
+    dest_app: "{{ app_path }}/{{ app_name }}/"
+  tasks:
+  - name: 创建应用目录
+    file:
+      path: "{{ dest_app }}"
+      state: directory
+      owner: root
+      group: root
+      mode: 0755
+  - name: 更新web代码
+    tags:
+      - upload
+    synchronize:
+      src: "{{ src_app }}"
+      dest: "{{ dest_app }}"
+  - name: 修改目录权限
+    tags:
+      - chmod
+    shell: "chown -R root.root {{ dest_app }}"

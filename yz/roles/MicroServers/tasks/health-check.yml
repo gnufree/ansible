@@ -1,0 +1,31 @@
+---
+
+# 检测jar包是否启动正常
+# 调用SpringCloud 的接口 http://192.168.100.201:8776/actuator/health
+
+
+# 创建端口搜索脚本
+- name: create or rebulid app_port script
+  template:
+    src: app_port.sh.j2
+    dest: "{{ script_pash }}/app_port.sh"
+    mode: 0755
+
+- name: get app port
+  shell: "sh {{ script_pash }}/app_port.sh {{ jar_name }}"
+  changed_when: True
+  register: app_health_port
+
+- name: download app health file
+  uri:
+    #dest: "{{ script_pash }}"
+    method: GET
+    url: "http://{{ inventory_hostname }}:{{ app_health_port.stdout }}/actuator/health"
+  changed_when: True
+  ignore_errors: yes
+  register: health
+
+# pip install jmespath
+- name: start rollback if health check failed
+  import_tasks: rollback.yml
+  when: health.status != 200 #or health.json|json_query('status') != 'UP'

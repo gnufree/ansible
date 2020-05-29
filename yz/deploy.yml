@@ -1,0 +1,18 @@
+---
+- name: release war to ansible client
+  hosts: s1
+  vars:
+    war_file: ../../repo/target/helloSpringboot-0.0.1-SNAPSHOT.jar
+    app_root: /data/service/helloSpringboot
+    bakdir: /data/backup/helloSpringboot/`data +%y%m%d`
+  tasks:
+   - name: create backup
+     shell: mkdir `bakdir`
+     tags: 
+     - app
+   - name: replice app
+     copy: src=`war_file` dest=`app_root`
+     tags: 
+     - app
+   - name: start jar
+     action: shell cd `app_root` && nohup java -Xms512M -Xmx512M -jar helloSpringboot-0.0.1-SNAPSHOT.jar > app.log &

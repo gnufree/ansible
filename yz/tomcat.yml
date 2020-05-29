@@ -1,0 +1,25 @@
+- hosts: "{{ host }}"
+  #strategy: debug
+  vars:
+    tomcat_version: 8.5.37
+    tomcat_state: deplay
+    tomcat_bulid_name: helloSpringboot-0.0.1-SNAPSHOT
+    tomcat_dir_name: yunzhihulian
+
+    tomcat_port_shutdown: 8005
+    tomcat_port_connector: 8080
+    tomcat_port_redirect: 8443
+
+    tomcat_permissions_production: False
+    
+    add_tomcat_users: False    
+    tomcat_users:
+      - username: "tomcat"
+        password: "t3mpp@ssw0rd"
+        roles: "tomcat,admin,manager,manager-gui"
+      - username: "exampleuser"
+        password: "us3rp@ssw0rd"
+        roles: "tomcat"        
+  roles:
+    - role: tomcat
+

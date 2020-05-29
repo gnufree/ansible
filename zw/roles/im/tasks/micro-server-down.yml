@@ -1,0 +1,23 @@
+---
+# 提供微服务下线请求
+- name: create or rebulid app_port script
+  template:
+    src: app_port.sh.j2
+    dest: "{{ service_name_path }}/app_port.sh"
+    mode: 0755
+
+- name: get app port
+  shell: "sh {{ service_name_path }}/app_port.sh {{ service_name }}"
+  changed_when: True
+  register: app_host
+
+- name: micro server down
+  uri:
+    method: POST
+    url: "http://{{ inventory_hostname }}:{{ app_host.stdout }}/actuator/pause"
+  changed_when: True
+  ignore_errors: yes
+  register: server_down
+
+- name: wait for eureka Cache invalidation
+  pause: seconds=30

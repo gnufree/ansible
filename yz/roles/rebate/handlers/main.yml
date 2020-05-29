@@ -1,0 +1,11 @@
+---
+
+#- name: startup jar
+#  shell: "sh {{ service_name_path }}/start.sh"
+
+# 启动应用 换成shell命令启动，避免shell脚本远程不执行的情况
+- name: startup jar
+  shell: "source /etc/profile && nohup java -Xms{{ jvm_Xms }}M -Xmx{{ jvm_Xmx }}M -jar {{ service_name_path }}/{{ service_name }}.jar > /dev/null 2>&1 &"
+
+- name: restart jar
+  shell: "sh {{ service_name_path }}/stop.sh && sleep 3 && sh {{ service_name_path }}/start.sh"

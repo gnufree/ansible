@@ -1,0 +1,28 @@
+---
+# 检测各种前置条件，目录属组等
+  
+- name: ensure group {{ group }} exist
+  group:
+    name: "{{ group }}"
+    state: present
+  when: use_not_root_user|bool
+
+- name: ensure user {{ user }} exist
+  user:
+    name: "{{ user }}"
+    group: "{{ group }}"
+    state: present
+  when: use_not_root_user|bool
+
+- name: ensure directory exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+    recurse: yes
+    owner: "{% if use_not_root_user|bool %}{{ user }}{% else %}root{% endif %}"
+    group: "{% if use_not_root_user|bool %}{{ group }}{% else %}root{% endif %}"
+  with_items:
+    - "{{ service_name_path }}"
+    - "{{ logs_path }}/{{ service_name }}"
+    - "{{ bakckup_path }}/{{ service_name }}"

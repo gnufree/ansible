@@ -1,0 +1,131 @@
+---
+
+# Nginx的发行版本名称，支持nginx，openresty
+nginx_name: openresty
+
+# 建议openresty版本在1.15.8以上 
+nginx_version: 1.15.8.1
+
+nginx_depend_pkgs:
+  - perl
+  - pcre-devel
+  - openssl-devel
+  - gcc  
+  - curl
+  - postgresql-devel
+  - readline-devel
+  - wget
+
+# 安装方式 from_yum  from_source_package 
+nginx_install_mode: from_source_package
+
+# openresty源码包下载地址 https://openresty.org/download/openresty-1.13.6.2.tar.gz
+download_openresty_url: https://openresty.org/download/openresty-
+
+# Nginx源码包下载地址 http://nginx.org/download/nginx-1.16.0.tar.gz
+download_nginx_url: http://nginx.org/download/nginx-
+
+# 只适用于Redhat和CentOS系统
+nginx_is_el: "{{ ansible_distribution in ['RedHat', 'CentOS'] }}"
+
+nginx_python_selinux_pkgs:
+  - libselinux-python
+  - libsemanage-python
+
+nginx_install_path_by_source: /data/service
+
+# Nginx binary名称
+nginx_binary_name: "nginx"
+
+openresty_configure_arguments: "--with-luajit 
+--with-http_stub_status_module 
+--with-file-aio 
+--with-stream 
+--with-stream_ssl_module 
+--with-http_realip_module 
+--with-stream_ssl_preread_module 
+--with-http_slice_module 
+--with-http_v2_module 
+--with-http_gzip_static_module 
+--with-http_sub_module
+--with-stream_realip_module 
+"
+
+nginx_configure_arguments: "--with-http_stub_status_module 
+--with-file-aio 
+--with-stream 
+--with-stream_ssl_module 
+--with-http_realip_module
+--with-stream_realip_module
+--with-stream_ssl_preread_module 
+--with-http_slice_module 
+--with-http_v2_module 
+--with-http_gzip_static_module 
+--with-http_sub_module 
+"
+
+# Nginx配置文件目录
+nginx_conf_dir:  "/data/service{% if nginx_name == 'openresty' %}/openresty{% endif %}/nginx/conf"
+nginx_conf_user: "{{ nginx_user }}"
+nginx_conf_group: "{{ nginx_group }}"
+nginx_dir_perm: 0755
+
+# Nginx配置文件子目录
+nginx_conf_subdirectory: ["vhost", "conf.d", "stream"]
+
+# Nginx 备份文件目录
+app_backup_path: /data/backup
+nginx_site_file_path: /data/service/website
+
+nginx_default_site_template: "site.conf.j2"
+
+# 是否指定Nginx运行用户，如果设置为True则制定Nginx运行用户为nginx_user
+nginx_user_cover: False
+nginx_user: root
+nginx_group: "{{nginx_user}}"
+nginx_pid_file: "{{ nginx_conf_dir }}/{{ nginx_binary_name }}.pid"
+nginx_worker_processes: "{% if ansible_processor_vcpus is defined %}{{ ansible_processor_vcpus }}{% else %}auto{% endif %}"
+nginx_worker_rlimit_nofile: 10240
+nginx_log_dir: "/data/logs/nginx"
+nginx_log_user: "{{ nginx_user }}"
+nginx_log_group: "{{ nginx_group }}"
+nginx_log_perm: 0755
+nginx_error_log_level: "error"
+
+# 是否为每个server设置单独的日志
+nginx_separate_logs_per_site: True
+nginx_access_log_name: "access"
+nginx_error_log_name: "error"
+
+
+# 配置Nginx额外的全局参数
+nginx_extra_root_params: []
+
+# 配置Nginx事件参数
+nginx_events_params:
+  - worker_connections 10240
+
+# 配置Nginx默认的http全局参数
+nginx_http_default_params:
+  - sendfile on
+  - tcp_nopush on
+  - tcp_nodelay on
+  - server_tokens off
+  - keepalive_timeout 65
+  - access_log "{{ nginx_log_dir }}/access.log"
+  - error_log "{{ nginx_log_dir }}/error.log" {{ nginx_error_log_level }}
+
+# upsteam负载方式
+LB_method: 'DEFAULT'
+
+nginx_http_params: "{{ nginx_http_default_params }}"
+
+nginx_stream_params: []
+nginx_stream_configs: {}
+
+nginx_modules_location: /usr/lib64/nginx/modules # For this variable, a specific value for the OS can be applied in vars/{{ ansible_os_family }}.
+
+nginx_auth_basic_files: {}
+nginx_remove_auth_basic_files: []
+
+nginx_daemon_mode: "on"

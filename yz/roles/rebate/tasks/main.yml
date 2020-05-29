@@ -1,0 +1,29 @@
+---
+# 本脚本只适用于集群微服务更新，包括微服务上下线等
+- name: depend check
+  import_tasks: check-depend.yml
+
+# 创建启动脚本
+- name: create or rebulid start script
+  template: 
+    src: start.sh.j2
+    dest: "{{ service_name_path }}/start.sh"
+    mode: 0755
+
+# 创建停止脚本
+- name: create or rebulid stop script
+  template:
+    src: stop.sh.j2
+    dest: "{{ service_name_path }}/stop.sh"
+    mode: 0755
+
+- name: micro server down
+  import_tasks: micro-server-down.yml
+  when: use_eureka_api|bool
+
+- name: update jar
+  import_tasks: update-jar.yml
+
+- name: health check
+  import_tasks: health-check.yml
+  when: health_chech_open|bool

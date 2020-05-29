@@ -1,0 +1,8 @@
+---
+# handlers file for tomcat-ansible-role
+
+- name: restart tomcat
+  shell: "sh {{ tomcat_complete_path }}/tomcat_shutdown.sh && sleep 5 && sh {{ tomcat_complete_path }}/tomcat_startup.sh"
+
+- name: startup tomcat
+  shell: "sh {{ tomcat_complete_path }}/tomcat_startup.sh"

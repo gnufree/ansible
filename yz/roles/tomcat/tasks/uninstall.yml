@@ -1,0 +1,48 @@
+---
+# tasks file for tomcat-ansible-role
+#根据webapps下是否有ROOT文件夹判断
+- name: (uninstall) Check if tomcat service {{ tomcat_dir_name }} is installed
+  stat:
+    path: "{{ tomcat_complete_path }}/webapps/ROOT"
+  register: service_installed
+
+- name: (uninstall) Check if {{ tomcat_dir_name }} service is running
+  shell: "ps -ef|grep {{ tomcat_dir_name }}|grep -v grep|wc -l"
+  register: service_running
+
+- name: (uninstall) Stop {{ tomcat_dir_name }} service if running
+  shell: "sh {{ tomcat_complete_path }}/tomcat_shutdown.sh"
+  when: service_running >= 1
+  register: service_is_stop
+
+- name: (uninstall) Create backup archive before deletion at {{ tomcat_backup_path }}/tomcat-backup-XXX.tgz
+  archive:
+    path: "{{ tomcat_complete_path }}"
+    dest: "{{ tomcat_backup_path }}/tomcat-{{ tomcat_dir_name }}-backup-{{ lookup('pipe','date +%Y%m%d%H%M%S') }}.tgz"
+  when: tomcat_uninstall_create_backup and service_is_stop
+
+- name: (uninstall) Remove {{ tomcat_complete_path }}
+  file:
+    path: "{{ tomcat_complete_path }}"
+    state: absent
+
+- name: (uninstall) Delete user {{ tomcat_user }}
+  user:
+    name: "{{ tomcat_user }}"
+    groups: "{{ tomcat_group }}"
+    state: absent
+    force: yes
+  when: tomcat_uninstall_remove_user
+
+- name: (uninstall) Delete group {{ tomcat_group }}
+  group:
+    name: "{{ tomcat_group }}"
+    state: absent
+  when: tomcat_uninstall_remove_group
+
+- name: (uninstall) Uninstall Java
+  yum:
+    name: "{{ item.package }}"
+    state: absent
+  with_items: "{{ tomcat_java_packages_EL }}"
+  when: tomcat_uninstall_remove_java

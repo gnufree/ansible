@@ -1,0 +1,25 @@
+---
+
+- name: depend check
+  import_tasks: check-depend.yml
+
+# 创建启动脚本
+- name: create or rebulid start script
+  template: 
+    src: start.sh.j2
+    dest: "{{ script_pash }}/start.sh"
+    mode: 0755
+
+# 创建停止脚本
+- name: create or rebulid stop script
+  template:
+    src: stop.sh.j2
+    dest: "{{ script_pash }}/stop.sh"
+    mode: 0755
+
+- name: update jar
+  import_tasks: update-jar.yml
+
+- name: health check
+  import_tasks: health-check.yml
+  when: health_chech_open

@@ -1,0 +1,41 @@
+---
+# Rollback jar
+
+- name: Get the latest backup file
+  shell: "ls -lt {{ bakckup_path }}/{{ service_name }}/*backup*|head -n 1|awk '{print$9}'"
+  register: backfile_path
+
+- name: (deplay) Check if {{ service_name }} service is running
+  shell: "ps -ef|grep {{ service_name }}|grep -v grep|wc -l"
+  register: service_running
+  
+- name: 获取jar包运行的pid
+  shell: "ps -ef |grep -v grep |grep {{ service_name }}|awk '{print $2}'"
+  when: service_running.stdout|int >= 1
+  register: running_processes
+
+# 强制杀死进程
+- name: Force kill stuck processes
+  shell: "kill -9 {{ item }}"
+  with_items: "{{ running_processes.stdout_lines }}"
+  when: service_running.stdout|int >= 1
+  register: service_is_stop
+
+- name: remove jar file
+  file:
+    path: "{{ service_name_path }}/{{ service_name }}.jar"
+    state: absent
+
+- name: rollback jar file from backup file
+  unarchive:
+    src: "{{ backfile_path.stdout }}"
+    dest: "{{ script_pash }}/"
+    remote_src: yes
+  notify: startup jar
+
+# 立即执行之前的handlers
+- name: 调用meta模块的flush_handlers
+  meta: flush_handlers
+
+- name: 触发回滚，暂停执行
+  shell: 'error error'

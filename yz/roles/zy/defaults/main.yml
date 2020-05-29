@@ -1,0 +1,19 @@
+---
+
+jar_name: "{{ jar_name }}"
+jar_directory_path: /data/service
+
+script_pash: "{{ jar_directory_path }}/{{ jar_name }}"
+jvm_Xms: 512
+jvm_Xmx: 512
+
+# 使用非root用户运行jar程序  False  True
+use_not_root_user: False
+
+# 运行jar程序的用户，use_not_root_user为True时生效
+user: www
+group: www
+
+logs_directory: /data/logs
+
+back_directory: /data/backup

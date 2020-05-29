@@ -1,0 +1,48 @@
+---
+# deplay war tasks file for tomcat-ansible-role 
+
+# 调用脚本tomcat_shutdown.sh，停止Tomcat服务
+
+# 检查是否有tomcat文件夹
+- name: (deplay) Check if tomcat of {{ tomcat_dir_name }} is exist
+  stat:
+    path: "{{ tomcat_complete_path }}/webapps"
+  register: tomcat_exist
+
+- name: (deplay) Check if {{ tomcat_dir_name }} service is running
+  shell: "ps -ef|grep {{ tomcat_dir_name }}|grep -v grep|wc -l"
+  register: service_running
+
+- name: (deplay) Stop {{ tomcat_dir_name }} service if running
+  shell: "sh {{ tomcat_complete_path }}/tomcat_shutdown.sh"
+  when: service_running >= 1
+  register: service_is_stop
+
+- name: (deplay) Check if webapps/ROOT of {{ tomcat_dir_name }} is exist
+  stat:
+    path: "{{ tomcat_complete_path }}/webapps/ROOT"
+  register: tomcat_root_exist
+
+- name: (deplay) Create backup archive before redeplay at {{ tomcat_backup_path }}/tomcat-war-backup-XXX.tgz
+  archive:
+    path: 
+      - "{{ tomcat_complete_path }}/webapps/ROOT/*"
+    dest: "{{ tomcat_backup_path }}/tomcat-war-{{ tomcat_dir_name }}-backup-{{ lookup('pipe','date +%Y%m%d%H%M%S') }}.tar.gz"
+  when: service_is_stop and tomcat_root_exist.stat.isdir is defined and tomcat_root_exist.stat.isdir
+
+- name: (deplay) Remove {{ tomcat_complete_path }}/webapps/ROOT
+  file:
+    path: "{{ tomcat_complete_path }}/webapps/ROOT"
+    state: absent
+  when: service_is_stop and tomcat_root_exist.stat.isdir is defined and tomcat_root_exist.stat.isdir
+
+# 从主服务器拷贝新war包到从服务器
+- name: copy new war file  
+  copy: 
+    src: "../repo/target/{{ tomcat_bulid_name }}.war"
+    dest: "{{ tomcat_complete_path }}/webapps/ROOT.war"
+    force: yes
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_group }}"
+    mode: 0744
+  notify: startup tomcat

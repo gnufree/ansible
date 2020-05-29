@@ -1,0 +1,35 @@
+---
+- name: sql 执行
+  hosts: "{{ host }}"
+  vars:
+    BAK_DIR: "/data/backup/db/"
+    BIN_PATH: "/opt/workspace/bin/"
+    UPDIR: "/data/update/db/"
+  tasks:
+  - name: 创建依赖目录
+    file:
+      path: "{{ item }}"
+      state: directory
+      owner: root
+      group: root
+      mode: 0755
+    with_items:
+      - "{{ BAK_DIR }}"
+      - "{{ BIN_PATH }}"
+      - "{{ UPDIR }}"
+  - name: 上传sql 文件
+    copy:
+      src: "{{ SQL }}"
+      dest: "{{ UPDIR }}/aaa.sql"
+      owner: root
+      group: root
+      mode: 0644
+  - name: 上传脚本文件
+    copy:
+      src: "{{ script }}"
+      dest: "{{ BIN_PATH }}/exec-sql.sh"
+      owner: root
+      group: root
+      mode: 0644
+  - name: 执行sql
+    shell: "sh {{ BIN_PATH}}exec-sql.sh {{ SQL_MODEL }} {{ DB }} {{ TABLE }}"

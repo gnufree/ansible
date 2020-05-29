@@ -1,0 +1,49 @@
+---
+- name: release war to ansible client
+  hosts: "{{ host }}"
+  vars:
+    app_path: "/data/service/{{ app_name }}"
+    bak_path: "/data/backup/{{ app_name }}"
+    log_path: "/data/logs/{{ app_name }}"
+    src_app: "../repo/target/{{ app_name }}-1.0.0.{{ pkg_type }}"
+    dest_app: "{{ app_path }}/{{ app_name }}-1.0.0.{{ pkg_type }}"
+  tasks:
+  - name: 创建应用目录
+    file:
+      path: "{{ item }}"
+      state: directory
+      owner: root
+      group: root
+      mode: 0755
+    with_items:
+      - "{{ app_path }}"
+      - "{{ bak_path }}"
+      - "{{ log_path }}"
+  - name: 备份
+    archive:
+      path:
+        - "{{ app_path }}/"
+      dest: "{{ bak_path }}/{{ app_name }}-1.0.0-backup-{{ lookup('pipe','date +%Y%m%d%H%M%S') }}.gz"
+  - name: 更新jar包
+    tags:
+      - upload
+    copy:
+      src: "{{ src_app }}"
+      dest: "{{ dest_app }}"
+      owner: root
+      group: root
+      mode: 0644
+  - name: 获取上次jar包运行的pid
+    tags:
+      - getpid
+    shell: "ps -ef |grep -v grep |grep {{ app_name }}|awk '{print $2}'"
+    register: running_processes
+# 强制杀死进程
+  - name: Force kill stuck processes
+    shell: "kill -9 {{ item }}"
+    with_items: "{{ running_processes.stdout_lines }}"
+# 启动应用
+  - name: start app
+    tags:
+      - start
+    shell: "source /etc/profile && nohup java -server -Xms512M -Xmx512M -jar {{ dest_app }} > /dev/null 2>&1 &"

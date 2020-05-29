@@ -1,0 +1,23 @@
+---
+- name: Copy the nginx configuration file
+  template:
+    src: nginx.conf.j2
+    dest: "{{ nginx_conf_dir }}/nginx.conf"
+  #notify:
+  #  - reload nginx
+
+- name: check nginx whether running
+  shell: "ps -ef|grep nginx|grep -v grep|wc -l"
+  register: nginx_is_running
+
+- name: Startup nginx if nginx is stop
+  debug: msg="Startup nginx if nginx is stop"
+  when: nginx_is_running.stdout|int == 0
+  changed_when: True
+  notify: startup nginx
+
+- name: reload nginx if nginx is running
+  debug: msg="reload nginx if nginx is running"
+  when: nginx_is_running.stdout|int >= 1
+  changed_when: True
+  notify: reload nginx

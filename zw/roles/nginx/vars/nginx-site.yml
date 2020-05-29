@@ -1,0 +1,41 @@
+---
+# 配置Nginx中各个站点的代理内容
+#nginx_sites:                                         
+# - server:                                           
+#    file_name: "{{ nginx_site_name }}"
+#    listen: 80
+#    server_name: "{{ nginx_conf_server_name }}"
+#    #root: "/tmp/site1"
+#    
+#    # 支持多个server，在执行前需要sed为真实的地址，此方式将不再支持多个upstream
+#    upstream1: {
+#      name:  "{{ nginx_site_name }}",
+#      server1: "192.11.11.11:222",
+#      server2: $$,
+#      server3: $$,
+#      server4: $$,
+#      server5: $$,
+#      server6: $$,
+#      server7: $$,
+#    }
+#    
+#   #upstream2: {
+#   #  name: ywzx-zhuanbar-mid-service2,
+#   #  server1: "172.16.11.46:8104",
+#   #  server2: "172.16.11.46:2222"
+#   #}
+#    
+#    location1: {
+#      name: /,
+#      #rewrite: "^(api/?.*)$ /$1 break",
+#      proxy_pass:  "http://{{ nginx_site_name }}",
+#      proxy_set_header1: "X-Real-IP $remote_addr",
+#      proxy_set_header2: "X-Forwarded-For $proxy_add_x_forwarded_for",
+#      proxy_set_header3: "Host $http_host",
+#      proxy_redirect: off
+#     }
+#    #location2: {
+#    #  name: /accel,
+#    #  alias: /data/service/website/ywzx-zhuanbar-accel-web/accel,
+#    #  index: "index.html index.htm"
+#    #  }

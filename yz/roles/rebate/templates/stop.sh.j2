@@ -1,0 +1,9 @@
+#!/bin/bash
+#{{ ansible_managed }}
+kill -9 `ps -aux | grep -w '{{ service_name }}' |grep -v grep| awk '{print $2}'`
+if [ $? -eq 0 ]
+then
+    echo "0"
+else
+	echo "notfoundpid"
+fi

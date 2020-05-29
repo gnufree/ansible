@@ -1,0 +1,10 @@
+---
+- name: 检查应用是否部署成功
+  hosts: "{{ host }}"
+  tasks:
+  - name: 查看进程是否存在
+    shell: "ps -ef |grep -w {{ app_name }} |grep -v grep|wc -l"
+    register: ps_result
+    failed_when: ' "0" in ps_result.stdout'
+  - debug:
+      msg: "部署成功 {{ ps_result.stdout }}"

@@ -1,0 +1,42 @@
+---
+- name: copy_JDK 1.8.201
+  copy: src=jdk-8u201-linux-x64.tar.gz
+        dest=/data/soft
+        
+#- name: mkdir jdk-8u201
+#  file: 
+#    path: /data/soft/jdk-8u201
+#    state: directory
+#    mode: 0755
+
+- name: unzip JDK
+  unarchive: src=/data/soft/jdk-8u201-linux-x64.tar.gz dest=/data/soft/ copy=no
+  
+- name: check jdk variable 
+  shell: cat /etc/profile
+  register: result
+  
+- name: jdk variable configuration /etc/profile
+  shell: /bin/echo {{ item }} >> /etc/profile && source /etc/profile
+  when: result.stdout.find('JAVA_HOME') == -1
+  with_items:
+    - export JAVA_HOME=/data/soft/jdk1.8.0_201
+    - export JRE_HOME=/data/soft/jdk1.8.0_201/jre
+    - export CLASSPATH=.:\$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar:\$JRE_HOME/lib:\$CLASSPATH
+    - export PATH=\$JAVA_HOME/bin:\$PATH
+  
+- name: check jdk variable 
+  shell: cat /root/.bashrc
+  register: bashrc_result
+
+- name: jdk variable configuration /root/.bashrc file
+  shell: /bin/echo {{ item }} >> /root/.bashrc && source /root/.bashrc
+  when: bashrc_result.stdout.find('JAVA_HOME') == -1
+  with_items:
+    - export JAVA_HOME=/data/soft/jdk1.8.0_201
+    - export JRE_HOME=/data/soft/jdk1.8.0_201/jre
+    - export CLASSPATH=.:\$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar:\$JRE_HOME/lib:\$CLASSPATH
+    - export PATH=\$JAVA_HOME/bin:\$PATH
+    
+- name: show jdk version
+  shell: java -version

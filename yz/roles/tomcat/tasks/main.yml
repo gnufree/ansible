@@ -1,0 +1,18 @@
+---
+# tasks file for tomcat-ansible-role
+
+- name: Install tomcat
+  import_tasks: install.yml
+  when: tomcat_state == "present"
+
+- name: Configure tomcat
+  import_tasks: configure.yml
+  when: tomcat_state == "config"
+
+- name: Uninstall tomcat
+  import_tasks: uninstall.yml
+  when: tomcat_state == "absent"
+
+- name: Deplay tomcat
+  import_tasks: deplay.yml
+  when: tomcat_state == "deplay"

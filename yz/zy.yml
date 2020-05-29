@@ -1,0 +1,8 @@
+- hosts: "{{ hosts }}"
+  #strategy: debug
+  serial: 1
+  vars:
+    jar_name: hhh
+    health_chech_open: False
+  roles:
+    - role: zy

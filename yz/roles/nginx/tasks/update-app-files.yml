@@ -1,0 +1,49 @@
+# 检查是否有应用文件夹
+- name: (update-app-files) Check if app of {{ nginx_site_name }} is exist
+  stat:
+    path: "{{ nginx_site_file_path }}/{{ nginx_site_name }}"
+  register: app_exist
+
+- name: (update-app-files) Create backup archive before redeplay at {{ app_backup_path }}/{{ nginx_site_name }}-backup-XXX.tgz
+  archive:
+    path: 
+      - "{{ nginx_site_file_path }}/{{ nginx_site_name }}/*"
+    dest: "{{ app_backup_path }}/{{ nginx_site_name }}/{{ nginx_site_name }}-backup-{{ lookup('pipe','date +%Y%m%d%H%M%S') }}.tar.gz"
+  when: app_exist.stat.exists
+
+- name: (update-app-files) Remove {{ nginx_site_file_path }}/{{ nginx_site_name }}/*
+  file:
+    path: "{{ nginx_site_file_path }}/{{ nginx_site_name }}/*"
+    state: absent
+  when: app_exist.stat.exists
+
+# 从主服务器拷贝新site包到从服务器
+#- name: (update-app-files) copy new site file  
+ # copy:
+#    src: "../repo/dist/"
+#    dest: "{{ nginx_site_file_path }}/{{ nginx_site_name }}/"
+  #  force: yes
+#    #owner: "{{ tomcat_user }}"
+#    #group: "{{ tomcat_group }}"
+#    mode: 0744
+#  notify: reload nginx
+- name: install rsync
+  yum:
+    name: rsync
+    state: present
+
+# 从主服务器拷贝新site包到从服务器
+- name: (update-app-files) copy new site file  
+  synchronize:
+    src: "../repo/dist/"
+    dest: "{{ nginx_site_file_path }}/{{ nginx_site_name }}/"
+    compress: yes
+    owner: no
+    group: no
+ # notify: reload nginx
+
+- name: copy nginx html to tomcat only ywzx-zhuanbar-accel-web
+  shell : 'cp -f dashboar*.html operationDeclaration-*.html /data/service/ywzx-zhuanbar-mid-service/webapps/ROOT/accel/'
+  args:
+    chdir: /data/service/website/ywzx-zhuanbar-accel-web/accel/accel
+  when: nginx_site_name == 'ywzx-zhuanbar-accel-web'

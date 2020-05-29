@@ -1,0 +1,30 @@
+#!/bin/bash
+declare -A app_port
+app_port=(
+[zhwk-eureka]="8761"
+[zhwk-gateway]="8762"
+[zhwk-auth]="8772"
+[zhwk-game]="8775"
+[zhwk-marketing]="8774"
+[zhwk-netbar]="8776"
+[zhwk-onlinepay]="8777"
+[zhwk-sync]="8781"
+[zhwk-task]="8773"
+[zhwk-water]="8779"
+[zhwk-wechat]="8778"
+)
+
+if [ ! -n "$1" ] ;then
+    echo "ERROR you have not input a agrs!"
+    exit
+fi
+
+for key in $(echo ${!app_port[*]})
+do
+  if [ $1 == $key ]
+  then   
+  echo "${app_port[$key]}"
+  exit
+  fi
+done
+echo "ERROR"

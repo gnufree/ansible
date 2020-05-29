@@ -1,0 +1,9 @@
+#!/bin/bash
+#{{ ansible_managed }}
+{% if use_not_root_user|bool %}
+usermod -s /bin/bash {{ user }}
+su - {{ user }} -c 'source /etc/profile && nohup java -Xms{{ jvm_Xms }}M -Xmx{{ jvm_Xmx }}M -jar {{ service_name_path }}/{{ service_name }}.jar > /dev/null 2>&1 &'
+usermod -s /sbin/nologin {{ user }}
+{% else %}
+source /etc/profile && nohup java -Xms{{ jvm_Xms }}M -Xmx{{ jvm_Xmx }}M -jar {{ service_name_path }}/{{ service_name }}.jar > /dev/null 2>&1 &
+{% endif %}

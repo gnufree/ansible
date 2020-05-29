@@ -1,0 +1,42 @@
+---
+
+- include_vars: "{{ item }}"
+  with_items:
+    - "../vars/nginx-site.yml"
+
+# 当系统启用selinux时，需要额外的操作
+- include_tasks: selinux.yml
+  when: work_model == 'install' and ansible_selinux and ansible_selinux.status == "enabled"
+  tags: [install, selinux, nginx]
+
+- name: install depend packages from yum
+  yum: 
+    name: "{{ nginx_depend_pkgs }}"
+    state: present
+    disable_gpg_check: yes
+  when: work_model == 'install' and nginx_is_el|bool
+  tags: [install, yum]
+
+- include_tasks: install-openresty.yml
+  when: work_model == 'install' and nginx_name == 'openresty' and nginx_is_el|bool
+  tags: [install, openresty]
+
+- include_tasks: install-nginx.yml
+  when: work_model == 'install' and nginx_name == 'nginx' and nginx_is_el|bool
+  tags: [install, nginx]
+
+- include_tasks: ensure-dirs.yml
+  tags: [configuration, nginx]
+
+- include_tasks: configuration.yml
+  when: work_model == 'install' or work_model == 'update_nginx_main_conf'
+  tags: [configuration, nginx]
+
+- include_tasks: app-server.yml
+  #when: work_model != 'install'
+  when: work_model == 'deplay_app'
+  tags: [configuration, nginx, update_app_file]
+
+- include_tasks: update-app-files.yml
+  when: work_model == 'update_app_file' or work_model == 'deplay_app'
+  tags: [update_app_file, nginx]

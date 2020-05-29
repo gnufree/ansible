@@ -1,0 +1,77 @@
+---
+# install tomcat tasks file for tomcat-ansible-role
+
+# 根据tomcat_install_java判断是否安装Java
+- name: Install Java
+  yum:
+    name: "{{ item.package }}"
+    state: present
+  with_items: "{{ tomcat_java_packages_EL }}"
+  when: tomcat_install_java
+
+# 根据应用名去判断是否安装过次应用的tomcat
+- name: Check if tomcat is already installed
+  stat:
+    #path: "{{ tomcat_install_path }}/{{ tomcat_dir_name }}"
+    path: "{{ tomcat_complete_path }}"
+  register: is_installed
+  tags:
+    - is_installed_tag
+
+- name: Create group {{ tomcat_group }}
+  group:
+    name: "{{ tomcat_group }}"
+    gid: "{{ tomcat_group_gid | default(omit) }}"
+    state: present
+
+- name: Create user {{ tomcat_user }}
+  user:
+    name: "{{ tomcat_user }}"
+    group: "{{ tomcat_group }}"
+    uid: "{{ tomcat_user_uid | default(omit) }}"
+    state: present
+
+- name: Create temp directory
+  file:
+    path: '{{ tomcat_temp_download_path }}'
+    state: directory
+  changed_when: False
+  when: not is_installed.stat.exists
+
+# 通过URL方式下载安装包
+- name: Download apache-tomcat-{{ tomcat_version }}.tar.gz by URL
+  get_url:
+    url: "{{ tomcat_downloadURL }}/tomcat/tomcat-{{ tomcat_version.split('.')[0] }}/v{{ tomcat_version }}/bin/apache-tomcat-{{ tomcat_version }}.tar.gz"
+    dest: "{{ tomcat_temp_download_path }}"
+    timeout: 120
+  when: not is_installed.stat.exists and  tomcat_package_source == "URL"
+
+# 通过ansible本地分发安装包
+- name: Download apache-tomcat-{{ tomcat_version }}.tar.gz by ansible
+  copy: 
+    src: "apache-tomcat-{{ tomcat_version }}.tar.gz"
+    dest: "{{ tomcat_temp_download_path }}"
+  when: tomcat_package_source == "local"
+
+- name: Unarchive apache-tomcat-{{ tomcat_version }}.tar.gz at {{ tomcat_install_path }}
+  unarchive:
+    src: "{{ tomcat_temp_download_path }}/apache-tomcat-{{ tomcat_version }}.tar.gz"
+    dest: "{{ tomcat_install_path }}"
+    remote_src: True
+    owner: "{% if tomcat_permissions_production %}root{% else %}{{ tomcat_user }}{% endif %}"
+    group: "{{ tomcat_group }}"
+    creates: "{{ tomcat_install_path }}/apache-tomcat-{{ tomcat_version }}"
+  register: tomcat_installed
+  when: not is_installed.stat.exists
+
+# 变更tomcat文件夹名为服务名
+- name: change tomcat directory name to {{ tomcat_dir_name }}
+  shell: "mv {{ tomcat_install_path }}/apache-tomcat-{{ tomcat_version }} {{ tomcat_install_path }}/{{ tomcat_dir_name }}"
+  when: tomcat_dir_name != "NULL"
+  
+- name: Clean up temporary files
+  file:
+    path: "{{ tomcat_temp_download_path }}"
+    state: absent
+  changed_when: False
+  when: not is_installed.stat.exists

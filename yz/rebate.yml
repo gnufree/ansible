@@ -1,0 +1,22 @@
+- hosts: "{{ hosts }}"
+  #strategy: debug
+  serial: 1
+  vars:
+    # 服务名称
+    service_name: hhh
+    health_chech_open: True
+    use_eureka_api: True
+    target_pkg: "../repo/{{ service_name }}/target/{{ service_name }}-1.0.0.jar"
+    init_path: /data/service
+    logs_path: /data/logs
+    bakckup_path: /data/backup
+    service_name_path: "{{ init_path }}/{{ service_name }}"
+    jvm_Xms: 512
+    jvm_Xmx: 512
+    # 使用非root用户运行jar程序  False  True
+    use_not_root_user: False
+    # 运行jar程序的用户，use_not_root_user为True时生效
+    user: www
+    group: www
+  roles:
+    - role: rebate

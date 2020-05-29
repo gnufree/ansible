@@ -1,0 +1,30 @@
+#!/bin/bash
+declare -A app_port
+app_port=(
+[eureka]="8761"
+[gateway]="8762"
+[auth]="8772"
+[data]="8779"
+[goods]="8774"
+[market]="8776"
+[member]="8773"
+[operate]="8777"
+[order]="8775"
+[pay]="8780"
+[task]="8778"
+)
+
+if [ ! -n "$1" ] ;then
+    echo "ERROR you have not input a agrs!"
+    exit
+fi
+
+for key in $(echo ${!app_port[*]})
+do
+  if [ $1 == $key ]
+  then   
+  echo "${app_port[$key]}"
+  exit
+  fi
+done
+echo "ERROR"

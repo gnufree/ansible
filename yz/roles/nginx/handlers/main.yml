@@ -1,0 +1,27 @@
+---
+
+- name: startup nginx
+  debug: msg="checking config first"
+  changed_when: True
+  notify:
+    - check nginx configuration
+    - startup nginx after config check
+
+- name: reload nginx
+  debug: msg="checking config first"
+  changed_when: True
+  notify:
+    - check nginx configuration
+    - reload nginx - after config check
+
+- name: check nginx configuration
+  shell: "{{ nginx_conf_dir }}/../sbin/{{ nginx_binary_name }} -t -c {{ nginx_conf_dir }}/nginx.conf"
+  register: result
+  changed_when: "result.rc != 0"
+  check_mode: no
+
+- name: reload nginx - after config check
+  shell:  "{{ nginx_conf_dir }}/../sbin/{{ nginx_binary_name }} -s reload -c {{ nginx_conf_dir }}/nginx.conf"
+
+- name: startup nginx after config check
+  shell:  "{{ nginx_conf_dir }}/../sbin/{{ nginx_binary_name }} -c {{ nginx_conf_dir }}/nginx.conf"

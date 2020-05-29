@@ -1,0 +1,44 @@
+---
+
+- name: install nginx by yum step 1
+  yum: name=yum-utils state=present disable_gpg_check=yes
+  when: nginx_install_mode == 'from_yum'
+
+- name: copy nginx repo to machine
+  template: src=nginx.repo.j2 dest=/etc/yum.repos.d/nginx.repo
+  when: nginx_install_mode == 'from_yum'
+
+- name: install nginx by yum step 2
+  shell: "yum-config-manager --enable nginx-stable"
+  when: nginx_install_mode == 'from_yum'
+
+- name: install nginx by yum step 3
+  yum: name=nginx state=present enablerepo="nginx-stable"
+  when: nginx_install_mode == 'from_yum'
+
+- name: download nginx source pkg
+  shell: "cd {{ nginx_install_path_by_source }}; wget -qN {{ download_nginx_url }}{{ nginx_version }}.tar.gz"
+  when: nginx_install_mode == 'from_source_package'
+
+- name: tar source pkg
+  unarchive:
+    copy: no
+    src: "{{ nginx_install_path_by_source }}/nginx-{{ nginx_version }}.tar.gz"
+    dest: "{{ nginx_install_path_by_source }}"
+  when: nginx_install_mode == 'from_source_package'
+
+#- name: rename source directory
+#  shell: "mv {{ nginx_install_path_by_source }}/nginx-{{ nginx_version }} {{ nginx_install_path_by_source }}/nginx"
+#  when: nginx_install_mode == 'from_source_package'
+
+- name: build nginx source
+  shell: "./configure --prefix={{ nginx_install_path_by_source }}/{{ nginx_name }} {{ nginx_configure_arguments }}"
+  args:
+    chdir: "{{ nginx_install_path_by_source }}/nginx-{{ nginx_version }}"
+  when: nginx_install_mode == 'from_source_package'
+
+- name: make&&install nginx source
+  shell: "make&&make install"
+  args:
+    chdir: "{{ nginx_install_path_by_source }}/nginx-{{ nginx_version }}"
+  when: nginx_install_mode == 'from_source_package'

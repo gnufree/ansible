@@ -1,0 +1,10 @@
+#!/bin/bash
+#{{ ansible_managed }}
+#pid=`ps -aux | grep '{{ jar_name }}' |grep -v grep| awk 'NR==1{print $2}'`
+kill -9 `ps -aux | grep '{{ jar_name }}' |grep -v grep| awk '{print $2}'`
+if [ $? -eq 0 ]
+then
+    echo "0"
+else
+	echo "notfoundpid"
+fi
