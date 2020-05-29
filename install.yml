@@ -1,0 +1,55 @@
+---
+  - hosts: testim
+    remote_user: root
+    tasks:
+      - name: 安装必备包
+        yum: name={{ item }} state=present
+        with_items:
+          - vim
+          - telnet
+          - net-tools
+          - wget
+          - curl
+          - ntp
+          - lsof
+          - sysstat
+      - name: 删除localtime
+        file:
+          path: /etc/localtime
+          state: absent   
+      - name: 修改/etc/sysconfig/clock
+        copy:
+          src: ./clock
+          dest: /etc/sysconfig/clock
+          owner: root
+          group: root
+          mode: 0644
+      - name: 修改时区
+        file:
+          path: /etc/localtime
+          src: /usr/share/zoneinfo/Asia/Shanghai
+          state: link
+      - name: 更新硬件时钟
+        shell: hwclock -w
+      - name: 查看时区
+        shell: date -R
+        register: date_result
+      - name: 显示时区
+        debug:
+          msg: "{{date_result}}"
+      - name: ntp同步
+        cron: name="ntpd" minute="10" job="/usr/sbin/ntpd ntp1.aliyun.com"
+      - name: stop firewalld
+        service: name=postfix state=stopped 
+      - name: disbled selinux
+        lineinfile: dest=/etc/selinux/config regexp=^SELINUX= line=SELINUX=disabled
+      - name: change root passwd
+        shell: echo "NSvaHGK[p-^a_*Z)Uy" |  passwd --stdin root
+      - name: change ulimit
+        copy:
+          src: ./limits.conf
+          dest: /etc/security/limits.conf
+          owner: root
+          group: root
+          mode: 0644
+          backup: yes 

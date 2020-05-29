@@ -1,0 +1,35 @@
+---
+  - hosts: testim
+    remote_user: root
+    tasks:
+      - name: 查看时区
+        shell: date -R
+        register: date_result
+      - name: 查看SELINUX
+        shell: getenforce
+        register: selinux_result
+      - name: 查看iptables
+        shell: iptables -nv -L
+        register: ips_result
+      - name: 查看ulimit
+        shell: ulimit -n
+        register: ulimit_result
+      - name: 查看swap分区
+        shell: free -m
+        register: swap_result
+      - name: 显示检查结果
+        debug:
+          msg: "{{date_result}}"
+      - name: selinux
+        debug:
+          msg: "{{selinux_result}}"
+      - name: iptables
+        debug:
+          msg: "{{ips_result}}"
+      - name: ulimit
+        debug:
+          msg: "{{ulimit_result}}"
+      - name: swap
+        debug:
+          msg: "{{swap_result}}"
+
